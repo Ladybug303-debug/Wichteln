@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wichtel Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h1 { text-align: center; }
+    .card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+    button { padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; }
+    #result { margin-top: 20px; font-weight: bold; }
+    input, textarea { width: 100%; padding: 10px; margin-top: 8px; border-radius: 10px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>🎁 Wichtel Generator</h1>
+
+  <div class="card">
+    <h3>Person hinzufügen</h3>
+    <input id="nameInput" placeholder="Name eingeben" />
+    <textarea id="wishInput" placeholder="Wunschliste (optional)"></textarea>
+    <button onclick="addPerson()">Hinzufügen</button>
+  </div>
+
+  <div class="card">
+    <h3>Teilnehmer</h3>
+    <ul id="personList"></ul>
+  </div>
+
+  <div class="card">
+    <button onclick="generatePairs()">Zufällige Wichtel-Paare ziehen</button>
+    <div id="result"></div>
+  </div>
+
+<script>
+  const persons = [];
+
+  function addPerson() {
+    const name = document.getElementById('nameInput').value.trim();
+    const wish = document.getElementById('wishInput').value.trim();
+    if (!name) return alert('Name eingeben!');
+    persons.push({ name, wish });
+    document.getElementById('nameInput').value = '';
+    document.getElementById('wishInput').value = '';
+    updateList();
+  }
+
+  function updateList() {
+    const list = document.getElementById('personList');
+    list.innerHTML = '';
+    persons.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = p.name + (p.wish ? " – Wünsche: " + p.wish : "");
+      list.appendChild(li);
+    });
+  }
+
+  function generatePairs() {
+    if (persons.length < 2) return alert('Mindestens 2 Personen nötig!');
+    
+    let receivers;
+    let valid = false;
+
+    // solange mischen, bis niemand sich selbst hat
+    while (!valid) {
+      receivers = [...persons].sort(() => Math.random() - 0.5);
+      valid = true;
+      for (let i = 0; i < persons.length; i++) {
+        if (persons[i].name === receivers[i].name) {
+          valid = false;
+          break;
+        }
+      }
+    }
+
+    let html = '<h3>Individuelle Links:</h3><ul>';
+    for (let i = 0; i < persons.length; i++) {
+      const giver = persons[i];
+      const receiver = receivers[i];
+      // baue einen Link mit URL-Parametern
+      const url = `${location.origin}${location.pathname}?giver=${encodeURIComponent(giver.name)}&receiver=${encodeURIComponent(receiver.name)}&wish=${encodeURIComponent(receiver.wish)}`;
+      html += `<li><a href="${url}" target="_blank">${giver.name} – persönlicher Link</a></li>`;
+    }
+    html += '</ul>';
+    document.getElementById('result').innerHTML = html;
+  }
+
+  // wenn jemand über einen Link kommt → nur seinen Empfänger anzeigen
+  window.onload = function() {
+    const params = new URLSearchParams(window.location.search);
+    const giver = params.get('giver');
+    const receiver = params.get('receiver');
+    const wish = params.get('wish');
+    if (giver && receiver) {
+      document.body.innerHTML = `<h1>🎁 Dein Wichtel-Ergebnis</h1>
+        <p><strong>${giver}</strong> beschenkt <strong>${receiver}</strong></p>
+        ${wish ? `<p>Wunschliste: ${wish}</p>` : ''}`;
+    }
+  }
+</script>
+</body>
+</html>
